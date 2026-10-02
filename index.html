@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>หุ่นยนต์ครูน้อย - เกมฝึกทักษะการคิดเชิงคำนวณ</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&family=Sarabun:wght@400;500;700&display=swap');
+
+        :root {
+            --bg-main: #14110e; /* Dark stone/void */
+            --bg-panel: #241e19; /* Tarnished panel */
+            --bg-darker: #0d0a08; /* Deep void */
+            --text-main: #e8dbce; /* Aged parchment */
+            --text-dim: #9c8a74; /* Tarnished gold text */
+            --accent-yellow: #d4af37; /* Erdtree Gold */
+            --accent-red: #8a2a22; /* Blood/Crimson */
+            --accent-blue: #5785a6; /* Glintstone */
+            --accent-green: #487859; /* Green Turtle */
+            
+            --block-f: #3a5c45;
+            --block-turn: #40627a;
+            --block-loop: #855c23;
+            --block-cond: #543b61;
+            --block-text: #e8dbce;
+
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-main);
+            background-image: radial-gradient(circle at 50% 0%, #2a221a 0%, var(--bg-main) 60%);
+            color: var(--text-main);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, .btn, .block-title {
+            font-family: 'Mali', cursive;
+        }
+
+        .app-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 1rem;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        header {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border-bottom: 2px solid #3a2e24;
+            padding-bottom: 1rem;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .level-nav {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .level-btn {
+            background: var(--bg-panel);
+            border: 2px solid var(--text-dim);
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .level-btn.active {
+            border-color: var(--accent-yellow);
+            background: rgba(212, 175, 55, 0.2);
+            color: var(--accent-yellow);
+            text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+        }
+
+        .level-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #555;
+            background: var(--bg-darker);
+        }
+
+        .game-area {
+            display: flex;
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .game-area {
+                flex-direction: column;
+            }
+        }
+
+        .col-left, .col-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .col-left {
+            max-width: 100%;
+        }
+        @media (min-width: 769px) {
+            .col-left { max-width: 45%; }
+        }
+
+        .level-info {
+            background: var(--bg-panel);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-yellow);
+            border-right: 1px solid #3a2e24;
+            border-top: 1px solid #3a2e24;
+            border-bottom: 1px solid #3a2e24;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .level-concept {
+            color: var(--accent-yellow);
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .canvas-container {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: radial-gradient(circle at center, #1b1713 0%, #0d0b09 100%);
+            border: 4px solid #5a4528;
+            outline: 2px solid #231c15;
+            border-radius: 8px;
+            box-shadow: inset 0 0 35px rgba(0,0,0,0.85), 0 8px 24px rgba(0,0,0,0.7), 0 0 15px rgba(197, 160, 89, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-container::after {
+            content: 'ELDEN MAP · THE LANDS BETWEEN';
+            position: absolute;
+            bottom: 6px;
+            right: 8px;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: rgba(197, 160, 89, 0.45);
+            font-family: 'Cinzel', 'Sarabun', serif;
+            pointer-events: none;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--text-main);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            transition: transform 0.1s, opacity 0.2s, filter 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        
+        .btn:hover:not(:disabled) { filter: brightness(1.2); }
+        .btn:active:not(:disabled) { transform: scale(0.95); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: #555; }
+        
+        .btn-play { background: linear-gradient(to bottom, #487859, #2d4d38); }
+        .btn-reset { background: linear-gradient(to bottom, #a37d1e, #6e5210); }
+        .btn-clear { background: linear-gradient(to bottom, #8a2a22, #521813); }
+        .btn-solution { background: linear-gradient(to bottom, #5785a6, #325066); }
+        
+        .speed-select {
+            padding: 0.5rem;
+            border-radius: 6px;
+            background: var(--bg-darker);
+            color: var(--text-main);
+            border: 1px solid var(--accent-yellow);
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .feedback-panel {
+            padding: 1rem;
+            border-radius: 8px;
+            display: none;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .feedback-success { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--accent-yellow); color: var(--accent-yellow); }
+        .feedback-error { background: rgba(138, 42, 34, 0.2); border: 1px solid var(--accent-red); color: #f0897f; }
+
+        .palette {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            background: var(--bg-panel);
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #3a2e24;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .program-area {
+            flex: 1;
+            background: var(--bg-darker);
+            border: 2px solid #3a2e24;
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            overflow-y: auto;
+            min-height: 250px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .block {
+            padding: 0.5rem;
+            border-radius: 6px;
+            color: var(--block-text);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            border: 1px solid rgba(255,255,255,0.15);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            position: relative;
+        }
+
+        .block-type-F { background: var(--block-f); }
+        .block-type-L, .block-type-R { background: var(--block-turn); }
+        .block-type-LOOP, .block-type-LOOP_FLAG { background: var(--block-loop); }
+        .block-type-IF_WALL { background: var(--block-cond); }
+
+        .block select {
+            background: rgba(0,0,0,0.5);
+            color: var(--text-main);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            padding: 2px;
+            font-family: inherit;
+        }
+
+        .palette-btn {
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .palette-btn:hover:not(:disabled) { transform: translateY(-2px); }
+        .palette-btn:disabled { filter: grayscale(1); opacity: 0.4; }
+
+        .block-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            width: 100%;
+        }
+
+        .block-children {
+            margin-left: 1.5rem;
+            padding-left: 0.5rem;
+            border-left: 2px solid rgba(212, 175, 55, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .btn-del {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: inherit;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .btn-del:hover { background: rgba(0,0,0,0.7); border-color: var(--accent-red); }
+
+        .insert-target-label {
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .insert-target-label input { cursor: pointer; }
+        
+        .is-target { outline: 2px solid var(--accent-yellow); outline-offset: 1px; background: rgba(212, 175, 55, 0.2); }
+
+        .block-active { filter: brightness(1.4); box-shadow: 0 0 12px var(--accent-yellow); border-color: var(--accent-yellow); }
+
+        .teacher-corner {
+            background: var(--bg-panel);
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 4px solid var(--accent-yellow);
+            border-right: 1px solid #3a2e24;
+            border-top: 1px solid #3a2e24;
+            border-bottom: 1px solid #3a2e24;
+            margin-top: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .teacher-corner summary {
+            font-family: 'Mali', cursive;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: var(--accent-yellow);
+            list-style: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .teacher-corner summary::before {
+            content: '▶';
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+            transition: transform 0.2s;
+        }
+        .teacher-corner[open] summary::before { transform: rotate(90deg); }
+
+        .teacher-content {
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            color: var(--text-dim);
+        }
+
+        *:focus-visible {
+            outline: 3px solid var(--accent-yellow);
+            outline-offset: 2px;
+        }
+
+        .stats { font-size: 0.9rem; color: var(--text-dim); text-align: right; }
+
+        .you-died-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(8, 2, 2, 0.88);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease-in;
+            backdrop-filter: blur(4px);
+        }
+
+        .you-died-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .you-died-banner {
+            width: 100%;
+            background: linear-gradient(180deg, rgba(30, 0, 0, 0) 0%, rgba(68, 8, 8, 0.85) 30%, rgba(55, 6, 6, 0.9) 70%, rgba(30, 0, 0, 0) 100%);
+            padding: 2.2rem 1rem;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(180, 20, 20, 0.4);
+            border-top: 1px solid rgba(138, 42, 34, 0.5);
+            border-bottom: 1px solid rgba(138, 42, 34, 0.5);
+            transform: scale(0.92);
+            transition: transform 1.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+        }
+
+        .you-died-overlay.active .you-died-banner {
+            transform: scale(1);
+        }
+
+        .you-died-text {
+            font-family: 'Cinzel', 'Times New Roman', serif;
+            font-size: clamp(3.2rem, 9vw, 5.5rem);
+            font-weight: 700;
+            letter-spacing: 0.28em;
+            color: #8f1d18;
+            text-shadow: 0 0 25px rgba(220, 20, 20, 0.8), 0 0 60px rgba(120, 0, 0, 0.9), 2px 2px 8px #000;
+            margin-right: -0.28em;
+            user-select: none;
+        }
+
+        .you-died-subtext {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 1.15rem;
+            color: #d6b38a;
+            margin-top: 0.8rem;
+            letter-spacing: 0.05em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        }
+
+        .you-died-btn {
+            margin-top: 2rem;
+            background: linear-gradient(180deg, #33271b 0%, #17120e 100%);
+            border: 1px solid var(--accent-yellow);
+            color: var(--accent-yellow);
+            padding: 0.65rem 2rem;
+            font-family: 'Mali', 'Cinzel', serif;
+            font-size: 1.05rem;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            border-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8), 0 0 10px rgba(212, 175, 55, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .you-died-btn:hover {
+            background: var(--accent-yellow);
+            color: #120e0b;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+<main class="app-container">
+    <header>
+        <div class="header-top">
+            <h1>🤖 หุ่นยนต์ครูน้อย</h1>
+            <div style="font-weight:bold; font-size:1.2rem; color:var(--accent-yellow)">
+                ดาวรวม: <span id="total-stars">0</span> / 18 ⭐️
+            </div>
+        </div>
+        <div class="level-nav" id="level-nav">
+            <!-- ปุ่มด่านจะถูกสร้างด้วย JS -->
+        </div>
+    </header>
+
+    <div class="game-area">
+        <!-- ฝั่งซ้าย: แผนที่และควบคุม -->
+        <div class="col-left">
+            <div class="level-info">
+                <div class="level-concept" id="ui-concept">แนวคิด: ลำดับขั้นตอน</div>
+                <h2 id="ui-title">ด่าน 1: ก้าวแรก</h2>
+                <p id="ui-desc">พาน้อยเดินไปให้ถึงธง</p>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="gameCanvas" width="600" height="600"></canvas>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-play" id="btn-play">▶ เริ่มทำงาน</button>
+                <button class="btn btn-reset" id="btn-reset">↺ รีเซ็ต</button>
+                <button class="btn btn-clear" id="btn-clear">🗑 ล้างโปรแกรม</button>
+                <button class="btn btn-solution" id="btn-solution">💡 เฉลย</button>
+                <select class="speed-select" id="speed-select" aria-label="ความเร็ว">
+                    <option value="1">ความเร็ว 1x</option>
+                    <option value="2">ความเร็ว 2x</option>
+                    <option value="3">ความเร็ว 3x</option>
+                </select>
+            </div>
+
+            <div id="feedback-panel" class="feedback-panel"></div>
+        </div>
+
+        <!-- ฝั่งขวา: เครื่องมือและโปรแกรม -->
+        <div class="col-right">
+            <div class="palette" id="palette">
+                <!-- ปุ่มเพิ่มบล็อก -->
+                <button class="block palette-btn block-type-F" onclick="app.addBlock('F')">เดินหน้า</button>
+                <button class="block palette-btn block-type-L" onclick="app.addBlock('L')">เลี้ยวซ้าย</button>
+                <button class="block palette-btn block-type-R" onclick="app.addBlock('R')">เลี้ยวขวา</button>
+                <button class="block palette-btn block-type-LOOP" onclick="app.addBlock('LOOP_N')">วนซ้ำ N รอบ</button>
+                <button class="block palette-btn block-type-LOOP_FLAG" id="btn-loop-flag" onclick="app.addBlock('LOOP_FLAG')">วนจนถึงธง</button>
+                <button class="block palette-btn block-type-IF_WALL" id="btn-if-wall" onclick="app.addBlock('IF_WALL')">ถ้าข้างหน้า=กำแพง</button>
+            </div>
+
+            <div class="stats">
+                ใช้ <span id="ui-block-count">0</span> บล็อก | เป้าหมาย 3 ดาว: ไม่เกิน <span id="ui-par">0</span> บล็อก
+            </div>
+            
+            <div style="font-size: 0.85rem; color: var(--accent-blue);">
+                <label><input type="radio" name="insertTarget" value="root" checked onchange="app.setTarget('root')"> วางต่อท้ายโปรแกรมหลัก (Root)</label>
+            </div>
+
+            <div class="program-area" id="program-area">
+                <!-- บล็อกโปรแกรมจะแสดงที่นี่ -->
+            </div>
+        </div>
+    </div>
+
+    <!-- มุมครู -->
+    <details class="teacher-corner">
+        <summary>มุมครู (สำหรับการนำไปสอน)</summary>
+        <div class="teacher-content">
+            <p><strong>แนวคิด:</strong> <span id="tc-idea"></span></p>
+            <p style="margin-top:0.5rem"><strong>ชวนอภิปราย:</strong> <span id="tc-question"></span></p>
+        </div>
+    </details>
+</main>
+
+<div id="you-died-overlay" class="you-died-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="you-died-banner">
+        <div class="you-died-text">YOU DIED</div>
+        <div id="you-died-subtext" class="you-died-subtext">เกิดข้อผิดพลาด: ผู้มัวหมองล้มลงระหว่างทาง</div>
+        <button class="you-died-btn" id="you-died-dismiss" onclick="app.dismissYouDied()">ลุกขึ้นสู้อีกครั้ง (Revive)</button>
+    </div>
+</div>
+
+<script>
+const LEVELS = [
+    {
+        id: 0,
+        concept: "ลำดับขั้นตอน (Sequence)",
+        name: "ด่าน 1: ก้าวแรก",
+        desc: "พาน้อยเดินไปให้ถึงธง",
+        map: [
+            "......",
+            "......",
+            "......",
+            "......",
+            "......",
+            "S..G.."
+        ],
+        startDir: 1, // 0=U, 1=R, 2=D, 3=L
+        par: 3,
+        solution: [
+            {type:'F'}, {type:'F'}, {type:'F'}
+        ],
+        tIdea: "การเขียนโปรแกรมคือการสั่งงานตามลำดับขั้น หุ่นยนต์จะทำงานทีละคำสั่งตามลำดับ การเรียงคำสั่งผิดจะทำให้ผลลัพธ์ผิดพลาด",
+        tQuestion: "ถ้านักเรียนสลับคำสั่ง หรือใส่เดินหน้าขาด/เกินไป 1 ครั้ง จะเกิดอะไรขึ้นกับหุ่นยนต์?"
+    },
+    {
+        id: 1,
+        concept: "ลำดับและทิศทาง",
+        name: "ด่าน 2: เลี้ยวซ้ายขวา",
+        desc: "เดินหลบไปหาธง",
+        map: [
+            "......",
+            "......",
+            "...G..",
+            "......",
+            "......",
+            "S....."
+        ],
+        startDir: 0,
+        par: 7,
+        solution: [
+            {type:'F'},{type:'F'},{type:'F'},{type:'R'},{type:'F'},{type:'F'},{type:'F'}
+        ],
+        tIdea: "การปรับมุมมองเชิงพื้นที่และการทำงานเป็นลำดับ ทิศทางซ้าย/ขวาเป็นทิศสัมพัทธ์อิงจากหน้าหุ่นยนต์ ไม่ใช่หน้าจอผู้เล่น",
+        tQuestion: "ทำไมหุ่นยนต์เลี้ยวแล้วไม่ได้เคลื่อนที่ไปข้างหน้าในคำสั่งเดียว? (แยกคำสั่งหันทิศ กับ คำสั่งเคลื่อนที่ออกจากกัน)"
+    },
+    {
+        id: 2,
+        concept: "การวนซ้ำ (Loop)",
+        name: "ด่าน 3: ขั้นบันได",
+        desc: "ใช้การวนซ้ำเพื่อลดจำนวนคำสั่ง",
+        map: [
+            "......",
+            "......",
+            "....G.",
+            "......",
+            "......",
+            "S....."
+        ],
+        startDir: 1,
+        par: 6,
+        solution: [
+            {type:'F'},
+            {type:'LOOP_N', n: 3, children: [{type:'L'},{type:'F'},{type:'R'},{type:'F'}]}
+        ],
+        tIdea: "การใช้ลูปช่วยลดความซ้ำซ้อน มองหารูปแบบ (Pattern Recognition) ที่เกิดขึ้นซ้ำๆ แล้วนำมาเขียนให้สั้นลง",
+        tQuestion: "นักเรียนสังเกตเห็นรูปแบบชุดคำสั่งใดที่เกิดขึ้นซ้ำๆ ในเส้นทางนี้?"
+    },
+    {
+        id: 3,
+        concept: "การวนซ้ำประยุกต์",
+        name: "ด่าน 4: เก็บดาว",
+        desc: "เก็บดาวให้ครบทุกดวงก่อนไปที่ธง",
+        map: [
+            "S..*..",
+            "G.....",
+            "......",
+            "*..*..",
+            "......",
+            "......"
+        ],
+        startDir: 1,
+        par: 7,
+        solution: [
+            {type:'LOOP_N', n: 3, children: [{type:'F'},{type:'F'},{type:'F'},{type:'R'}]},
+            {type:'F'},{type:'F'}
+        ],
+        tIdea: "การประยุกต์ใช้ลูปทำงานที่ซับซ้อนขึ้น เช่นการเดินเป็นรูปสี่เหลี่ยม หรือแวะทำภารกิจย่อย",
+        tQuestion: "การหาจุดอ้างอิงที่ลงตัวในการเริ่มและจบลูปแต่ละรอบ ช่วยให้เราเขียนโปรแกรมง่ายขึ้นอย่างไร?"
+    },
+    {
+        id: 4,
+        concept: "เงื่อนไข (Condition)",
+        name: "ด่าน 5: ทางตัน",
+        desc: "ใช้เงื่อนไขตรวจสอบกำแพงข้างหน้า",
+        map: [
+            "......",
+            ".####.",
+            ".####.",
+            ".####.",
+            ".####.",
+            "S##G.."
+        ],
+        startDir: 0,
+        par: 4,
+        solution: [
+            {type:'LOOP_FLAG', children: [
+                {type:'IF_WALL', children:[{type:'R'}]},
+                {type:'F'}
+            ]}
+        ],
+        tIdea: "การตรวจสอบเงื่อนไขแบบพลวัต (Dynamic) ทำให้หุ่นยนต์ตัดสินใจได้เองเมื่อเจอสถานการณ์หน้างาน (กำแพง)",
+        tQuestion: "ถ้าแผนที่นี้ยืดออกไปยาวกว่าเดิม โปรแกรมที่เราเขียนไว้นี้ยังทำงานได้หรือไม่? เพราะเหตุใด?"
+    },
+    {
+        id: 5,
+        concept: "ลูปซ้อนลูป (Nested Loop)",
+        name: "ด่าน 6: ทางงู",
+        desc: "วนซ้ำในวนซ้ำ เก็บดาวทั้งหมดให้ได้",
+        map: [
+            "S....*",
+            "*.....",
+            ".....*",
+            "*.....",
+            "G.....",
+            "......"
+        ],
+        startDir: 1,
+        par: 11,
+        solution: [
+            {type:'LOOP_N', n: 2, children: [
+                {type:'LOOP_N', n: 5, children: [{type:'F'}]},
+                {type:'R'},{type:'F'},{type:'R'},
+                {type:'LOOP_N', n: 5, children: [{type:'F'}]},
+                {type:'L'},{type:'F'},{type:'L'}
+            ]}
+        ],
+        tIdea: "ลูปซ้อนลูปแก้ปัญหาที่มีการทำซ้ำระดับย่อย ภายในรูปแบบการทำซ้ำระดับใหญ่ ช่วยจัดการโครงสร้างที่ซับซ้อนมากได้",
+        tQuestion: "โค้ดที่สั้นที่สุด อ่านเข้าใจง่ายที่สุดเสมอไปหรือไม่? ข้อดีข้อเสียของการซ้อนลูปหลายชั้นคืออะไร?"
+    }
+];
+
+const app = {
+    currentLevelIdx: 0,
+    stars: [0,0,0,0,0,0],
+    program: [],
+    nextId: 1,
+    targetId: 'root',
+    isPlaying: false,
+    simStates: [],
+    animIndex: 0,
+    animTimer: null,
+    
+    // ตั้งค่า DOM Elements
+    els: {
+        canvas: document.getElementById('gameCanvas'),
+        ctx: document.getElementById('gameCanvas').getContext('2d'),
+        nav: document.getElementById('level-nav'),
+        progArea: document.getElementById('program-area'),
+        fbPanel: document.getElementById('feedback-panel'),
+        btnPlay: document.getElementById('btn-play'),
+        btnReset: document.getElementById('btn-reset'),
+        btnClear: document.getElementById('btn-clear'),
+        btnSol: document.getElementById('btn-solution'),
+        speed: document.getElementById('speed-select')
+    },
+
+    playYouDiedAudio() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if(!AudioContext) return;
+            const ctx = new AudioContext();
+            
+            // Sub-bass rumble (Elden death bell hit)
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(65, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(32, ctx.currentTime + 2.2);
+
+            gain.gain.setValueAtTime(0.4, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 2.5);
+
+            // Resonant low chime
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(130, ctx.currentTime);
+            osc2.frequency.exponentialRampToValueAtTime(55, ctx.currentTime + 1.8);
+
+            gain2.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.0);
+
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start();
+            osc2.stop(ctx.currentTime + 2.0);
+        } catch(e) {
+            // Audio context silently ignored if restricted by browser policy
+        }
+    },
+
+    showYouDied(reasonMsg) {
+        const overlay = document.getElementById('you-died-overlay');
+        const sub = document.getElementById('you-died-subtext');
+        if(!overlay || !sub) return;
+        
+        sub.textContent = reasonMsg;
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+        this.playYouDiedAudio();
+    },
+
+    dismissYouDied() {
+        const overlay = document.getElementById('you-died-overlay');
+        if(overlay) {
+            overlay.classList.remove('active');
+            overlay.setAttribute('aria-hidden', 'true');
+        }
+        this.resetRobot();
+    },
+
+    init() {
+        this.loadStars();
+        this.renderLevelNav();
+        this.loadLevel(0);
+        
+        // ผูก Event
+        this.els.btnPlay.addEventListener('click', () => this.runSimulation());
+        this.els.btnReset.addEventListener('click', () => this.resetRobot());
+        this.els.btnClear.addEventListener('click', () => this.clearProgram());
+        this.els.btnSol.addEventListener('click', () => this.showSolution());
+    },
+
+    loadStars() {
+        try {
+            const saved = localStorage.getItem('littleTeacherStars');
+            if(saved) {
+                const parsed = JSON.parse(saved);
+                if(Array.isArray(parsed) && parsed.length === 6) {
+                    this.stars = parsed;
+                }
+            }
+        } catch(e) { console.warn("Cannot read localStorage", e); }
+        this.updateTotalStars();
+    },
+
+    saveStars() {
+        try {
+            localStorage.setItem('littleTeacherStars', JSON.stringify(this.stars));
+        } catch(e) { console.warn("Cannot save localStorage", e); }
+        this.updateTotalStars();
+        this.renderLevelNav();
+    },
+
+    updateTotalStars() {
+        const total = this.stars.reduce((a,b) => a+b, 0);
+        document.getElementById('total-stars').textContent = total;
+    },
+
+    renderLevelNav() {
+        this.els.nav.innerHTML = '';
+        for(let i=0; i<6; i++) {
+            const btn = document.createElement('button');
+            btn.className = `level-btn ${this.currentLevelIdx === i ? 'active' : ''}`;
+            btn.textContent = i+1;
+            // ปลดล็อกด่าน 1 เสมอ ด่านถัดไปปลดล็อกถ้าด่านก่อนหน้ามี >= 1 ดาว
+            if(i > 0 && this.stars[i-1] === 0) {
+                btn.disabled = true;
+            }
+            btn.onclick = () => this.loadLevel(i);
+            this.els.nav.appendChild(btn);
+        }
+    },
+
+    loadLevel(idx) {
+        this.stopAnimation();
+        this.currentLevelIdx = idx;
+        const lv = LEVELS[idx];
+        
+        document.getElementById('ui-concept').textContent = `แนวคิด: ${lv.concept}`;
+        document.getElementById('ui-title').textContent = lv.name;
+        document.getElementById('ui-desc').textContent = lv.desc;
+        document.getElementById('ui-par').textContent = lv.par;
+        document.getElementById('tc-idea').textContent = lv.tIdea;
+        document.getElementById('tc-question').textContent = lv.tQuestion;
+
+        // เปิด/ปิดปุ่มเครื่องมือบล็อกขั้นสูง
+        document.getElementById('btn-loop-flag').disabled = (idx < 4);
+        document.getElementById('btn-if-wall').disabled = (idx < 4);
+
+        this.program = [];
+        this.setTarget('root');
+        this.resetRobot();
+        this.renderLevelNav();
+    },
+
+    getId() { return 'b_' + (this.nextId++); },
+
+    setTarget(id) {
+        this.targetId = id;
+        this.renderBlocks();
+    },
+
+    addBlock(type) {
+        if(this.isPlaying) return;
+        const b = { id: this.getId(), type: type };
+        if(type === 'LOOP_N') b.n = 2;
+        if(type === 'LOOP_N' || type === 'LOOP_FLAG' || type === 'IF_WALL') {
+            b.children = [];
+        }
+
+        if(this.targetId === 'root') {
+            this.program.push(b);
+        } else {
+            const parent = this.findBlock(this.program, this.targetId);
+            if(parent && parent.children) {
+                parent.children.push(b);
+            } else {
+                this.targetId = 'root';
+                this.program.push(b);
+            }
+        }
+        this.renderBlocks();
+    },
+
+    deleteBlock(id) {
+        if(this.isPlaying) return;
+        this.program = this.removeBlockById(this.program, id);
+        // ตรวจสอบว่า target โดนลบไปไหม
+        if(this.targetId !== 'root' && !this.findBlock(this.program, this.targetId)) {
+            this.targetId = 'root';
+            const r = document.querySelector('input[name="insertTarget"][value="root"]');
+            if(r) r.checked = true;
+        }
+        this.renderBlocks();
+    },
+
+    findBlock(list, id) {
+        for(let b of list) {
+            if(b.id === id) return b;
+            if(b.children) {
+                const found = this.findBlock(b.children, id);
+                if(found) return found;
+            }
+        }
+        return null;
+    },
+
+    removeBlockById(list, id) {
+        return list.filter(b => {
+            if(b.id === id) return false;
+            if(b.children) b.children = this.removeBlockById(b.children, id);
+            return true;
+        });
+    },
+
+    clearProgram() {
+        if(this.isPlaying) return;
+        this.program = [];
+        this.setTarget('root');
+        const r = document.querySelector('input[name="insertTarget"][value="root"]');
+        if(r) r.checked = true;
+        this.renderBlocks();
+        this.resetRobot();
+    },
+
+    renderBlocks() {
+        this.els.progArea.innerHTML = '';
+        this.els.progArea.appendChild(this.buildBlockNodes(this.program));
+        
+        const count = this.countBlocks(this.program);
+        document.getElementById('ui-block-count').textContent = count;
+    },
+
+    countBlocks(list) {
+        let c = 0;
+        for(let b of list) {
+            c++;
+            if(b.children) c += this.countBlocks(b.children);
+        }
+        return c;
+    },
+
+    buildBlockNodes(list) {
+        const frag = document.createDocumentFragment();
+        for(let b of list) {
+            const div = document.createElement('div');
+            div.className = `block-container`;
+            div.id = `ui-${b.id}`;
+
+            const header = document.createElement('div');
+            header.className = `block block-type-${b.type}`;
+
+            let titleStr = '';
+            let isContainer = false;
+
+            if(b.type === 'F') titleStr = 'เดินหน้า';
+            else if(b.type === 'L') titleStr = 'เลี้ยวซ้าย';
+            else if(b.type === 'R') titleStr = 'เลี้ยวขวา';
+            else if(b.type === 'LOOP_N') {
+                isContainer = true;
+                titleStr = 'วนซ้ำ ';
+            } else if(b.type === 'LOOP_FLAG') {
+                isContainer = true;
+                titleStr = 'วนจนถึงธง';
+            } else if(b.type === 'IF_WALL') {
+                isContainer = true;
+                titleStr = 'ถ้าข้างหน้า=กำแพง';
+            }
+
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'block-title';
+            titleSpan.textContent = titleStr;
+            
+            if(b.type === 'LOOP_N') {
+                const sel = document.createElement('select');
+                sel.ariaLabel = "จำนวนรอบ";
+                sel.style.marginLeft = "0.5rem";
+                for(let i=2; i<=6; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = `${i} รอบ`;
+                    if(i === b.n) opt.selected = true;
+                    sel.appendChild(opt);
+                }
+                sel.onchange = (e) => { b.n = parseInt(e.target.value); };
+                titleSpan.appendChild(sel);
+            }
+
+            const rightGrp = document.createElement('div');
+            rightGrp.style.display = 'flex';
+            rightGrp.style.alignItems = 'center';
+            rightGrp.style.gap = '0.5rem';
+
+            if(isContainer) {
+                const label = document.createElement('label');
+                label.className = `insert-target-label ${this.targetId === b.id ? 'is-target' : ''}`;
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'insertTarget';
+                radio.value = b.id;
+                radio.checked = (this.targetId === b.id);
+                radio.onchange = () => this.setTarget(b.id);
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(' ใส่ในนี้'));
+                rightGrp.appendChild(label);
+            }
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn-del';
+            delBtn.textContent = '×';
+            delBtn.ariaLabel = "ลบบล็อก";
+            delBtn.onclick = () => this.deleteBlock(b.id);
+            rightGrp.appendChild(delBtn);
+
+            header.appendChild(titleSpan);
+            header.appendChild(rightGrp);
+            div.appendChild(header);
+
+            if(isContainer) {
+                const childrenDiv = document.createElement('div');
+                childrenDiv.className = 'block-children';
+                childrenDiv.appendChild(this.buildBlockNodes(b.children));
+                div.appendChild(childrenDiv);
+            }
+
+            frag.appendChild(div);
+        }
+        return frag;
+    },
+
+    runSimulation() {
+        if(this.isPlaying) return;
+        if(this.program.length === 0) return;
+        
+        this.isPlaying = true;
+        this.els.btnPlay.disabled = true;
+        this.els.btnSol.disabled = true;
+        this.hideFeedback();
+        
+        const lv = LEVELS[this.currentLevelIdx];
+        
+        // หาจุดเริ่มต้นและจำนวนดาว
+        let startX=0, startY=0, totalStars=0;
+        for(let y=0; y<6; y++) {
+            for(let x=0; x<6; x++) {
+                if(lv.map[y][x] === 'S') { startX = x; startY = y; }
+                if(lv.map[y][x] === '*') totalStars++;
+            }
+        }
+
+        // สถานะเริ่มต้น
+        let state = {
+            x: startX, y: startY, dir: lv.startDir,
+            collected: new Set(), stars: 0,
+            status: 'RUNNING', steps: 0,
+            activeBlock: null
+        };
+
+        const statesHistory = [{...state}];
+        let infCount = 0;
+
+        const getAhead = (cx, cy, cdir) => {
+            let nx = cx, ny = cy;
+            if(cdir === 0) ny--; // บน
+            else if(cdir === 1) nx++; // ขวา
+            else if(cdir === 2) ny++; // ล่าง
+            else if(cdir === 3) nx--; // ซ้าย
+            return {nx, ny};
+        };
+
+        const isWall = (nx, ny) => {
+            if(nx<0 || nx>=6 || ny<0 || ny>=6) return true;
+            return lv.map[ny][nx] === '#';
+        };
+
+        const pushState = (id) => {
+            statesHistory.push({...state, activeBlock: id, collected: new Set(state.collected)});
+        };
+
+        // Recursive executor แบบ Synchronous เพื่อคำนวณประวัติสถานะทั้งหมดก่อน
+        const execute = (blocks) => {
+            for(let b of blocks) {
+                if(state.status !== 'RUNNING') return;
+                
+                state.steps++;
+                if(state.steps > 900) { state.status = 'FAIL_INF'; return; }
+
+                pushState(b.id);
+
+                if(b.type === 'F') {
+                    let {nx, ny} = getAhead(state.x, state.y, state.dir);
+                    if(isWall(nx, ny)) {
+                        state.status = 'FAIL_WALL'; return;
+                    }
+                    state.x = nx; state.y = ny;
+                    if(lv.map[ny][nx] === '*' && !state.collected.has(`${nx},${ny}`)) {
+                        state.collected.add(`${nx},${ny}`);
+                        state.stars++;
+                    }
+                    pushState(b.id);
+                }
+                else if(b.type === 'L') { state.dir = (state.dir + 3) % 4; pushState(b.id); }
+                else if(b.type === 'R') { state.dir = (state.dir + 1) % 4; pushState(b.id); }
+                else if(b.type === 'LOOP_N') {
+                    for(let i=0; i<b.n; i++) {
+                        execute(b.children);
+                        if(state.status !== 'RUNNING') return;
+                    }
+                }
+                else if(b.type === 'LOOP_FLAG') {
+                    let localSafety = 0;
+                    while(lv.map[state.y][state.x] !== 'G') {
+                        localSafety++; infCount++;
+                        if(localSafety > 900 || infCount > 60) { state.status = 'FAIL_INF'; return; }
+                        execute(b.children);
+                        if(state.status !== 'RUNNING') return;
+                    }
+                }
+                else if(b.type === 'IF_WALL') {
+                    let {nx, ny} = getAhead(state.x, state.y, state.dir);
+                    if(isWall(nx, ny)) {
+                        execute(b.children);
+                    }
+                }
+            }
+        };
+
+        execute(this.program);
+
+        // ตรวจสอบชัยชนะหลังจากคำสั่งสิ้นสุด
+        if(state.status === 'RUNNING') {
+            if(lv.map[state.y][state.x] === 'G') {
+                if(state.stars === totalStars) state.status = 'WIN';
+                else state.status = 'FAIL_STAR';
+            } else {
+                state.status = 'FAIL_GOAL';
+            }
+        }
+        
+        pushState(null); // เฟรมสุดท้าย ไม่เน้นบล็อกใด
+        this.simStates = statesHistory;
+        this.animIndex = 0;
+
+        // ข้ามแอนิเมชันถ้าผู้ใช้ตั้งค่า prefers-reduced-motion
+        if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            this.animIndex = this.simStates.length - 1;
+            this.drawFrame(this.simStates[this.animIndex]);
+            this.endSimulation(this.simStates[this.animIndex]);
+        } else {
+            this.playAnimation();
+        }
+    },
+
+    playAnimation() {
+        if(!this.isPlaying) return;
+        const spd = parseInt(this.els.speed.value) || 1;
+        const delay = 400 / spd;
+
+        const state = this.simStates[this.animIndex];
+        this.drawFrame(state);
+
+        // ไฮไลต์บล็อก
+        document.querySelectorAll('.block-active').forEach(e => e.classList.remove('block-active'));
+        if(state.activeBlock) {
+            const ui = document.getElementById(`ui-${state.activeBlock}`);
+            if(ui) ui.querySelector('.block').classList.add('block-active');
+        }
+
+        this.animIndex++;
+        if(this.animIndex < this.simStates.length) {
+            this.animTimer = setTimeout(() => this.playAnimation(), delay);
+        } else {
+            this.endSimulation(state);
+        }
+    },
+
+    endSimulation(finalState) {
+        this.isPlaying = false;
+        this.els.btnPlay.disabled = false;
+        this.els.btnSol.disabled = false;
+        document.querySelectorAll('.block-active').forEach(e => e.classList.remove('block-active'));
+
+        const lv = LEVELS[this.currentLevelIdx];
+        const count = this.countBlocks(this.program);
+
+        if(finalState.status === 'WIN') {
+            let starsEarned = 1;
+            if(count <= lv.par) starsEarned = 3;
+            else if(count <= lv.par + 3) starsEarned = 2;
+
+            if(starsEarned > this.stars[this.currentLevelIdx]) {
+                this.stars[this.currentLevelIdx] = starsEarned;
+                this.saveStars();
+            }
+
+            this.showFeedback(`สำเร็จ! ผ่านการทดสอบ ได้รับ ${starsEarned} ดาว ⭐️ (ใช้ ${count} บล็อก)`, 'success');
+        } else {
+            let msg = 'ทำงานไม่สำเร็จ...';
+            if(finalState.status === 'FAIL_WALL') msg = 'ผู้มัวหมองเดินชนกำแพงหิน หรือพลัดตกสู่ขอบเหวมัชฌิมาเทศ';
+            else if(finalState.status === 'FAIL_INF') msg = 'คำสาปวนซ้ำไม่รู้จบ (Infinite Loop): ติดอยู่ในห้วงเวลา';
+            else if(finalState.status === 'FAIL_STAR') msg = 'ยังรวบรวมรูนทองคำไม่ครบทุกชิ้นก่อนไปยังจุดพร!';
+            else if(finalState.status === 'FAIL_GOAL') msg = 'โปรแกรมสิ้นสุดแล้ว แต่ยังก้าวไปไม่ถึงจุดพร (Site of Grace)';
+            
+            this.showFeedback(msg, 'error');
+            // แสดงหน้าต่าง YOU DIED สไตล์ Elden Ring
+            this.showYouDied(msg);
+        }
+    },
+
+    stopAnimation() {
+        if(this.animTimer) clearTimeout(this.animTimer);
+        this.isPlaying = false;
+        this.els.btnPlay.disabled = false;
+        this.els.btnSol.disabled = false;
+        document.querySelectorAll('.block-active').forEach(e => e.classList.remove('block-active'));
+    },
+
+    resetRobot() {
+        this.stopAnimation();
+        this.hideFeedback();
+        
+        const lv = LEVELS[this.currentLevelIdx];
+        let startX=0, startY=0;
+        for(let y=0; y<6; y++) {
+            for(let x=0; x<6; x++) {
+                if(lv.map[y][x] === 'S') { startX = x; startY = y; }
+            }
+        }
+        this.drawFrame({ x: startX, y: startY, dir: lv.startDir, collected: new Set() });
+    },
+
+    drawFrame(state) {
+        const ctx = this.els.ctx;
+        const w = 600, h = 600;
+        const cs = w / 6; // 100px per cell
+        const lv = LEVELS[this.currentLevelIdx];
+
+        ctx.clearRect(0, 0, w, h);
+
+        // 1. พื้นหลังแผนที่สไตล์กระดาษโบราณ / แผ่นหินดินแดนมัชฌิมาประเทศ
+        const bgGrad = ctx.createRadialGradient(w/2, h/2, 50, w/2, h/2, 420);
+        bgGrad.addColorStop(0, '#1c1813');
+        bgGrad.addColorStop(0.7, '#14110e');
+        bgGrad.addColorStop(1, '#090807');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        // 2. วาดตาราง แผ่นหิน และองค์ประกอบแผนที่
+        for(let y = 0; y < 6; y++) {
+            for(let x = 0; x < 6; x++) {
+                const cell = lv.map[y][x];
+                const cx = x * cs;
+                const cy = y * cs;
+
+                // เส้นกริดแผนที่โบราณสีทองทึบ (Etched Tarnished Gold Grid)
+                ctx.strokeStyle = 'rgba(197, 160, 89, 0.16)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(cx + 0.5, cy + 0.5, cs, cs);
+
+                // ลายมุมแผ่นหินแบบโบราณ
+                ctx.strokeStyle = 'rgba(197, 160, 89, 0.08)';
+                ctx.beginPath();
+                ctx.moveTo(cx + 8, cy + 2); ctx.lineTo(cx + 2, cy + 2); ctx.lineTo(cx + 2, cy + 8);
+                ctx.moveTo(cx + cs - 8, cy + 2); ctx.lineTo(cx + cs - 2, cy + 2); ctx.lineTo(cx + cs - 2, cy + 8);
+                ctx.moveTo(cx + 2, cy + cs - 8); ctx.lineTo(cx + 2, cy + cs - 2); ctx.lineTo(cx + 8, cy + cs - 2);
+                ctx.moveTo(cx + cs - 8, cy + cs - 2); ctx.lineTo(cx + cs - 2, cy + cs - 2); ctx.lineTo(cx + cs - 2, cy + cs - 8);
+                ctx.stroke();
+
+                // จุดเริ่มต้น (S): วงเวททองคำอัญเชิญ (Summon Sign)
+                if(cell === 'S') {
+                    this.drawSummonRune(ctx, cx + cs/2, cy + cs/2, cs*0.38);
+                }
+
+                if(cell === '#') { // ซากปรักหักพังกำแพงหินโบราณ (Stormveil / Leyndell Ruins)
+                    this.drawEldenWall(ctx, cx, cy, cs);
+                }
+                else if(cell === '*' && !state.collected.has(`${x},${y}`)) { // รูนทองคำ (Golden Rune Arc)
+                    this.drawStar(ctx, cx + cs/2, cy + cs/2, 22);
+                }
+                else if(cell === 'G') { // จุดพรแห่งมัชฌิมาประเทศ (Site of Grace)
+                    this.drawFlag(ctx, cx + cs/2, cy + cs/2, cs);
+                }
+            }
+        }
+
+        // 3. วาดหุ่นยนต์ผู้มัวหมอง (The Tarnished Robot)
+        this.drawRobot(ctx, state.x * cs + cs/2, state.y * cs + cs/2, state.dir, cs);
+    },
+
+    drawSummonRune(ctx, cx, cy, radius) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.strokeStyle = 'rgba(218, 178, 86, 0.35)';
+        ctx.fillStyle = 'rgba(218, 178, 86, 0.04)';
+        ctx.lineWidth = 1.5;
+
+        // วงแหวนรูน 2 ชั้น
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.arc(0, 0, radius * 0.72, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // สัญลักษณ์ 4 ทิศแห่งพระพร
+        ctx.beginPath();
+        ctx.moveTo(-radius * 0.9, 0); ctx.lineTo(radius * 0.9, 0);
+        ctx.moveTo(0, -radius * 0.9); ctx.lineTo(0, radius * 0.9);
+        ctx.stroke();
+        ctx.restore();
+    },
+
+    drawEldenWall(ctx, cx, cy, cs) {
+        ctx.save();
+        const p = 5;
+        const w = cs - p * 2;
+
+        // บล็อกหินมนต์ดำโบราณ
+        const stoneGrad = ctx.createLinearGradient(cx, cy, cx + cs, cy + cs);
+        stoneGrad.addColorStop(0, '#2d2621');
+        stoneGrad.addColorStop(0.5, '#1e1a17');
+        stoneGrad.addColorStop(1, '#110f0d');
+
+        ctx.fillStyle = stoneGrad;
+        ctx.fillRect(cx + p, cy + p, w, w);
+
+        // กรอบหินศิลาแกะลาย
+        ctx.strokeStyle = '#473a2e';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cx + p, cy + p, w, w);
+
+        // รอยร้าวพลังสีทองคำแห่งพฤกษาทอง (Erdtree Golden Vein)
+        ctx.strokeStyle = 'rgba(224, 180, 84, 0.65)';
+        ctx.lineWidth = 1.8;
+        ctx.shadowColor = '#e0b454';
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.moveTo(cx + p + 14, cy + p + w - 10);
+        ctx.lineTo(cx + cs/2 - 4, cy + cs/2 + 6);
+        ctx.lineTo(cx + cs/2 + 8, cy + cs/2 - 10);
+        ctx.lineTo(cx + cs - p - 12, cy + p + 14);
+        ctx.stroke();
+
+        // รอยแตกกิ่งรอง
+        ctx.beginPath();
+        ctx.lineWidth = 1;
+        ctx.moveTo(cx + cs/2 - 4, cy + cs/2 + 6);
+        ctx.lineTo(cx + p + 18, cy + cs/2 - 4);
+        ctx.stroke();
+
+        ctx.restore();
+    },
+
+    drawStar(ctx, cx, cy, radius) {
+        ctx.save();
+        ctx.translate(cx, cy);
+
+        // รัศมีแสงสีทองอร่าม (Golden Rune Aura)
+        const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, radius * 1.8);
+        glow.addColorStop(0, 'rgba(255, 228, 140, 0.85)');
+        glow.addColorStop(0.35, 'rgba(224, 178, 64, 0.4)');
+        glow.addColorStop(1, 'rgba(180, 130, 30, 0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // รูนทองคำทรงวงแหวนมหาพฤกษา (Elden Great Rune Arcs)
+        ctx.strokeStyle = '#fff2ab';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = '#ffdf6d';
+        ctx.shadowBlur = 10;
+
+        // วงแหวนคู่ประสาน
+        ctx.beginPath();
+        ctx.arc(0, -3, radius * 0.62, 0, Math.PI * 2);
+        ctx.arc(0, 5, radius * 0.62, Math.PI * 0.2, Math.PI * 0.8);
+        ctx.stroke();
+
+        // เสาพลังงานรูนแกนกลาง
+        ctx.beginPath();
+        ctx.moveTo(0, -radius * 0.85);
+        ctx.lineTo(0, radius * 0.85);
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // ประกายกากบาทแห่งพร
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    },
+
+    drawFlag(ctx, cx, cy, cs) {
+        ctx.save();
+        ctx.translate(cx, cy);
+
+        // 1. แสงรัศมีรอบจุดพร (Site of Grace Glow)
+        const graceGlow = ctx.createRadialGradient(0, 6, 4, 0, 0, cs * 0.48);
+        graceGlow.addColorStop(0, 'rgba(255, 238, 160, 0.95)');
+        graceGlow.addColorStop(0.4, 'rgba(226, 177, 60, 0.45)');
+        graceGlow.addColorStop(1, 'rgba(160, 110, 20, 0)');
+        ctx.fillStyle = graceGlow;
+        ctx.beginPath();
+        ctx.arc(0, 4, cs * 0.48, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2. ฐานกระบี่หัก/แท่นพรปักลงพื้น (Lost Grace Stake)
+        ctx.strokeStyle = '#5a4632';
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.moveTo(0, 26);
+        ctx.lineTo(0, -2);
+        ctx.stroke();
+
+        ctx.strokeStyle = '#9d7c49';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-10, 8);
+        ctx.lineTo(10, 8);
+        ctx.stroke();
+
+        // 3. เส้นทางแห่งพร (Guidance of Grace - เกลียวแสงสีทองพวยพุ่งขึ้น)
+        ctx.shadowColor = '#ffeaa7';
+        ctx.shadowBlur = 12;
+        ctx.strokeStyle = '#fff8cb';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 8);
+        ctx.quadraticCurveTo(-14, -12, -4, -28);
+        ctx.quadraticCurveTo(4, -36, 0, -42);
+        ctx.stroke();
+
+        // ลำแสงนำทางพุ่งสู่เป้าหมาย (Ray of Guidance)
+        ctx.strokeStyle = 'rgba(255, 235, 140, 0.65)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, 8);
+        ctx.lineTo(18, -26);
+        ctx.stroke();
+
+        // ดวงแก่นพรลอยอยู่ใจกลาง
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-2, -18, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    },
+
+    drawRobot(ctx, cx, cy, dir, cs) {
+        ctx.save();
+        ctx.translate(cx, cy);
+
+        // หมุนตามทิศ (0=บน, 1=ขวา, 2=ล่าง, 3=ซ้าย)
+        ctx.rotate(dir * Math.PI / 2);
+
+        // รัศมีออร่าผู้มัวหมอง (Tarnished Aura)
+        ctx.shadowColor = 'rgba(224, 180, 84, 0.55)';
+        ctx.shadowBlur = 10;
+
+        // 1. ผ้าคลุมศึกด้านหลัง (Weathered Cape)
+        ctx.fillStyle = '#1e1c1b';
+        ctx.beginPath();
+        ctx.moveTo(-cs * 0.22, cs * 0.12);
+        ctx.lineTo(cs * 0.22, cs * 0.12);
+        ctx.lineTo(cs * 0.15, cs * 0.36);
+        ctx.lineTo(-cs * 0.15, cs * 0.36);
+        ctx.closePath();
+        ctx.fill();
+
+        // 2. เกราะเหล็กไหลและหมวกเหล็ก (Knight's Greathelm / Iron Armor)
+        const helmGrad = ctx.createRadialGradient(0, 0, 4, 0, 0, cs * 0.32);
+        helmGrad.addColorStop(0, '#54585c');
+        helmGrad.addColorStop(0.7, '#2b2f33');
+        helmGrad.addColorStop(1, '#17191c');
+        ctx.fillStyle = helmGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, cs * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+
+        // กรอบขลิบทองเหลืองนักรบ (Gilded Trim)
+        ctx.strokeStyle = '#c5a059';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // 3. ช่องมองหมวกเกราะเรืองแสงแห่งพร (Glowing Visor Slit)
+        ctx.fillStyle = '#ffeaa7';
+        ctx.shadowColor = '#f39c12';
+        ctx.shadowBlur = 8;
+        ctx.fillRect(-10, -8, 20, 3.5);
+
+        // 4. หอกนำทางสีทอง (Grace Arrow Indicator - ชี้บอกทิศทางด้านหน้าชัดเจน)
+        ctx.fillStyle = '#ffd269';
+        ctx.strokeStyle = '#5c4516';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -cs * 0.38);
+        ctx.lineTo(-9, -cs * 0.18);
+        ctx.lineTo(9, -cs * 0.18);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+    },
+
+    showFeedback(msg, type) {
+        this.els.fbPanel.textContent = msg;
+        this.els.fbPanel.className = `feedback-panel feedback-${type}`;
+        this.els.fbPanel.style.display = 'block';
+    },
+    
+    hideFeedback() {
+        this.els.fbPanel.style.display = 'none';
+    },
+
+    showSolution() {
+        if(this.isPlaying) return;
+        const lv = LEVELS[this.currentLevelIdx];
+        
+        // Clone solution AST with new IDs
+        const cloneAST = (nodes) => {
+            return nodes.map(n => {
+                const b = { id: this.getId(), type: n.type };
+                if(n.n) b.n = n.n;
+                if(n.children) b.children = cloneAST(n.children);
+                return b;
+            });
+        };
+        
+        this.program = cloneAST(lv.solution);
+        this.setTarget('root');
+        this.renderBlocks();
+        this.resetRobot();
+    }
+};
+
+// เริ่มต้นเกมเมื่อโหลดเสร็จ
+window.onload = () => {
+    app.init();
+};
+</script>
+</body>
+</html>
